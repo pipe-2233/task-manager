@@ -1,24 +1,21 @@
-# Dockerfile para Spring Boot Task Manager
-FROM maven:3.9-openjdk-17 AS build
+# Dockerfile simple para Spring Boot
+FROM openjdk:17-jdk-slim
+
+# Instalar Maven
+RUN apt-get update && apt-get install -y maven
 
 # Directorio de trabajo
-WORKDIR /build
+WORKDIR /app
 
-# Copiar archivos necesarios
+# Copiar archivos
 COPY pom.xml .
 COPY src src
 
-# Construir la aplicación
+# Construir aplicación
 RUN mvn clean package -DskipTests
-
-# Imagen de ejecución
-FROM openjdk:17-jdk-slim
-
-# Copiar el JAR generado
-COPY --from=build /build/target/*.jar app.jar
 
 # Exponer puerto
 EXPOSE 8080
 
 # Ejecutar aplicación
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+CMD ["java", "-jar", "target/task-manager-backend-1.0.0.jar"]
