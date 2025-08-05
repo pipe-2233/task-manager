@@ -1,0 +1,270 @@
+<div class="app-container">
+  <!-- Header -->
+  <div class="app-header">
+    <h1>Task Manager</h1>
+    <p>Gestor completo de tareas y usuarios</p>
+  </div>
+
+  <!-- Estado de conexión -->
+  <div class="connection-status">
+    <span [class]="backendConnected ? 'connected' : 'disconnected'">
+      {{ backendConnected ? '🟢 Conectado al backend' : '🔴 Desconectado del backend' }}
+    </span>
+  </div>
+
+  <!-- Mensajes -->
+  <div *ngIf="message" [class]="'message ' + messageType">
+    {{ message }}
+  </div>
+
+  <!-- Dashboard principal -->
+  <div class="dashboard">
+    
+    <!-- Sección de Usuarios -->
+    <div class="users-section">
+      <h2>👥 Gestión de Usuarios</h2>
+      
+      <!-- Controles de usuarios -->
+      <div class="controls">
+        <button class="btn btn-primary" (click)="loadUsers()">
+          🔄 Recargar Usuarios
+        </button>
+        <button class="btn btn-success" (click)="showUserForm = !showUserForm">
+          {{ showUserForm ? '❌ Cancelar' : '➕ Nuevo Usuario' }}
+        </button>
+      </div>
+
+      <!-- Formulario de nuevo usuario -->
+      <div *ngIf="showUserForm" class="form-container">
+        <h3>{{ editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</h3>
+        <form (ngSubmit)="editingUser ? updateUser() : createUser()">
+          
+          <div class="form-group">
+            <label for="username">Nombre de usuario:</label>
+            <input 
+              type="text" 
+              id="username" 
+              [(ngModel)]="newUser.username" 
+              name="username"
+              required 
+              placeholder="Ingrese nombre de usuario">
+          </div>
+
+          <div class="form-group">
+            <label for="firstName">Nombre:</label>
+            <input 
+              type="text" 
+              id="firstName" 
+              [(ngModel)]="newUser.firstName" 
+              name="firstName"
+              required 
+              placeholder="Ingrese nombre">
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Apellido:</label>
+            <input 
+              type="text" 
+              id="lastName" 
+              [(ngModel)]="newUser.lastName" 
+              name="lastName"
+              required 
+              placeholder="Ingrese apellido">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input 
+              type="email" 
+              id="email" 
+              [(ngModel)]="newUser.email" 
+              name="email"
+              required 
+              placeholder="Ingrese email">
+          </div>
+
+          <div class="form-group" *ngIf="!editingUser">
+            <label for="password">Contraseña:</label>
+            <input 
+              type="password" 
+              id="password" 
+              [(ngModel)]="newUser.password" 
+              name="password"
+              required 
+              placeholder="Ingrese contraseña">
+          </div>
+
+          <div class="form-group">
+            <label for="role">Rol:</label>
+            <select id="role" [(ngModel)]="newUser.role" name="role" required>
+              <option value="">Seleccione un rol</option>
+              <option value="USER">Usuario</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" class="btn btn-success">
+              {{ editingUser ? '💾 Actualizar Usuario' : '➕ Crear Usuario' }}
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="cancelUserForm()">
+              ❌ Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Lista de usuarios -->
+      <div class="users-list">
+        <div *ngIf="users.length === 0" class="empty-state">
+          No hay usuarios registrados
+        </div>
+        
+        <div *ngFor="let user of users" class="user-card">
+          <div class="user-info">
+            <h4>{{ user.firstName }} {{ user.lastName }}</h4>
+            <p><strong>Usuario:</strong> {{ user.username }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Rol:</strong> <span [class]="'role ' + user.role.toLowerCase()">{{ user.role }}</span></p>
+            <p><strong>Estado:</strong> <span [class]="'status ' + (user.enabled ? 'active' : 'inactive')">{{ user.enabled ? 'Activo' : 'Inactivo' }}</span></p>
+            <p><strong>Creado:</strong> {{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <div class="user-actions">
+            <button class="btn btn-sm btn-primary" (click)="editUser(user)">
+              ✏️ Editar
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="deleteUser(user.id!)">
+              🗑️ Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Tareas -->
+    <div class="tasks-section">
+      <h2>📋 Gestión de Tareas</h2>
+      
+      <!-- Controles de tareas -->
+      <div class="controls">
+        <button class="btn btn-primary" (click)="loadTasks()">
+          🔄 Recargar Tareas
+        </button>
+        <button class="btn btn-success" (click)="showTaskForm = !showTaskForm" [disabled]="users.length === 0">
+          {{ showTaskForm ? '❌ Cancelar' : '➕ Nueva Tarea' }}
+        </button>
+      </div>
+
+      <div *ngIf="users.length === 0" class="message info">
+        ℹ️ Necesitas crear al menos un usuario antes de crear tareas
+      </div>
+
+      <!-- Formulario de nueva tarea -->
+      <div *ngIf="showTaskForm && users.length > 0" class="form-container">
+        <h3>{{ editingTask ? 'Editar Tarea' : 'Crear Nueva Tarea' }}</h3>
+        <form (ngSubmit)="editingTask ? updateTask() : createTask()">
+          
+          <div class="form-group">
+            <label for="taskTitle">Título:</label>
+            <input 
+              type="text" 
+              id="taskTitle" 
+              [(ngModel)]="newTask.title" 
+              name="taskTitle"
+              required 
+              placeholder="Ingrese título de la tarea">
+          </div>
+
+          <div class="form-group">
+            <label for="taskDescription">Descripción:</label>
+            <textarea 
+              id="taskDescription" 
+              [(ngModel)]="newTask.description" 
+              name="taskDescription"
+              placeholder="Ingrese descripción de la tarea">
+            </textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="taskUserId">Asignar a usuario:</label>
+            <select id="taskUserId" [(ngModel)]="newTask.userId" name="taskUserId" required>
+              <option value="">Seleccione un usuario</option>
+              <option *ngFor="let user of users" [value]="user.id">
+                {{ user.firstName }} {{ user.lastName }} ({{ user.username }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="taskPriority">Prioridad:</label>
+            <select id="taskPriority" [(ngModel)]="newTask.priority" name="taskPriority" required>
+              <option value="">Seleccione prioridad</option>
+              <option value="LOW">Baja</option>
+              <option value="MEDIUM">Media</option>
+              <option value="HIGH">Alta</option>
+              <option value="URGENT">Urgente</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="taskStatus">Estado:</label>
+            <select id="taskStatus" [(ngModel)]="newTask.status" name="taskStatus" required>
+              <option value="">Seleccione estado</option>
+              <option value="PENDING">Pendiente</option>
+              <option value="IN_PROGRESS">En Progreso</option>
+              <option value="COMPLETED">Completada</option>
+              <option value="CANCELLED">Cancelada</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="taskDueDate">Fecha límite:</label>
+            <input 
+              type="datetime-local" 
+              id="taskDueDate" 
+              [(ngModel)]="newTask.dueDate" 
+              name="taskDueDate">
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" class="btn btn-success">
+              {{ editingTask ? '💾 Actualizar Tarea' : '➕ Crear Tarea' }}
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="cancelTaskForm()">
+              ❌ Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Lista de tareas -->
+      <div class="tasks-list">
+        <div *ngIf="tasks.length === 0" class="empty-state">
+          No hay tareas registradas
+        </div>
+        
+        <div *ngFor="let task of tasks" class="task-card">
+          <div class="task-info">
+            <h4>{{ task.title }}</h4>
+            <p *ngIf="task.description"><strong>Descripción:</strong> {{ task.description }}</p>
+            <p><strong>Usuario:</strong> {{ getUserName(task.userId) }}</p>
+            <p><strong>Prioridad:</strong> <span [class]="'priority ' + task.priority.toLowerCase()">{{ task.priority }}</span></p>
+            <p><strong>Estado:</strong> <span [class]="'status ' + task.status.toLowerCase()">{{ getStatusLabel(task.status) }}</span></p>
+            <p *ngIf="task.dueDate"><strong>Fecha límite:</strong> {{ task.dueDate | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p><strong>Creado:</strong> {{ task.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p *ngIf="task.completedAt"><strong>Completado:</strong> {{ task.completedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <div class="task-actions">
+            <button class="btn btn-sm btn-primary" (click)="editTask(task)">
+              ✏️ Editar
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="deleteTask(task.id!)">
+              🗑️ Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
