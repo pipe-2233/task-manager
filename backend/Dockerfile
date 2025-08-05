@@ -1,5 +1,5 @@
 # Dockerfile para Spring Boot Task Manager
-FROM maven:3.8.6-openjdk-17 AS build
+FROM maven:3.9-openjdk-17 AS build
 
 # Directorio de trabajo
 WORKDIR /build
